@@ -1,4 +1,4 @@
-# Based on [this](https://github.com/designcourse/threejs-webpack-starter)
+Based on [this](https://github.com/designcourse/threejs-webpack-starter) repo
 
 ## Setup
 Download [Node.js](https://nodejs.org/en/download/).
