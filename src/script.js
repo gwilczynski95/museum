@@ -38,7 +38,7 @@ const scene = new THREE.Scene()
 
 
 // Player
-const player = {height: 1.8, speed: 250., turnSpeed:Math.PI*0.02, mass: 10};
+const player = {height: 1.8, speed: 150., turnSpeed:Math.PI*0.02, mass: 10};
 
 // Physics
 let prevTime = performance.now();
@@ -213,8 +213,8 @@ window.addEventListener('resize', () =>
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
 
-    windowHalfX = window.innerWidth / 2;
-    windowHalfY = window.innerHeight / 2;  
+    // windowHalfX = window.innerWidth / 2;
+    // windowHalfY = window.innerHeight / 2;  
 
     // Update camera
     camera.aspect = sizes.width / sizes.height
@@ -387,19 +387,11 @@ for (let iter=0; iter < segmentsAfter; iter++) {
     iterator++;
 }
 
-for (let iter=0; iter <segmentsAfter + segmentsBefore + 1; iter++) {
-    console.log(segmentsArr[iter].segment.name)
-    console.log(scene.getObjectByName(segmentsArr[iter].segment.name))
-}
-console.log(segmentsArr);
-
-
-
-
-
-
-
-
+// for (let iter=0; iter <segmentsAfter + segmentsBefore + 1; iter++) {
+//     console.log(segmentsArr[iter].segment.name)
+//     console.log(scene.getObjectByName(segmentsArr[iter].segment.name))
+// }
+// console.log(segmentsArr);
 
 
 
@@ -448,7 +440,7 @@ const tick = () =>
         // segments update
         if (camera.position.x < segmentsArr[segmentsBefore].minX) {
             var segmentToRemove = scene.getObjectByName(`segment${segmentsArr[0].number}`)
-            console.log(`removing maxX: ${segmentsArr[0].maxX}, minX: ${segmentsArr[0].minX}, number: ${segmentsArr[0].number}`)
+            // console.log(`removing maxX: ${segmentsArr[0].maxX}, minX: ${segmentsArr[0].minX}, number: ${segmentsArr[0].number}`)
             scene.remove(segmentToRemove);
             segmentsArr = arrayRotate(segmentsArr);
             var tempGeometry = corridorSegmentGeometry(width, depth, height);
@@ -459,13 +451,13 @@ const tick = () =>
                 number: segmentsArr[segmentsBefore + segmentsAfter - 1].number + 1,
                 segment: new THREE.Mesh(tempGeometry, getRandomColorMaterial())
             }
-            console.log(`adding maxX: ${segmentsArr[segmentsBefore + segmentsAfter].maxX}, minX: ${segmentsArr[segmentsBefore + segmentsAfter].minX}, number: ${segmentsArr[segmentsBefore + segmentsAfter].number}`)
+            // console.log(`adding maxX: ${segmentsArr[segmentsBefore + segmentsAfter].maxX}, minX: ${segmentsArr[segmentsBefore + segmentsAfter].minX}, number: ${segmentsArr[segmentsBefore + segmentsAfter].number}`)
             segmentsArr[segmentsBefore + segmentsAfter].segment.name = `segment${segmentsArr[segmentsBefore + segmentsAfter].number}`
             scene.add(segmentsArr[segmentsBefore + segmentsAfter].segment)
 
         } else if (camera.position.x > segmentsArr[segmentsBefore].maxX) {
             var segmentToRemove = scene.getObjectByName(`segment${segmentsArr[segmentsBefore + segmentsAfter].number}`)
-            console.log(`removing maxX: ${segmentsArr[segmentsBefore + segmentsAfter].maxX}, minX: ${segmentsArr[segmentsBefore + segmentsAfter].minX}, number: ${segmentsArr[segmentsBefore + segmentsAfter].number}`)
+            // console.log(`removing maxX: ${segmentsArr[segmentsBefore + segmentsAfter].maxX}, minX: ${segmentsArr[segmentsBefore + segmentsAfter].minX}, number: ${segmentsArr[segmentsBefore + segmentsAfter].number}`)
             scene.remove(segmentToRemove);
             segmentsArr = arrayRotate(segmentsArr, true);
             var tempGeometry = corridorSegmentGeometry(width, depth, height);
@@ -476,7 +468,7 @@ const tick = () =>
                 number: segmentsArr[1].number - 1,
                 segment: new THREE.Mesh(tempGeometry, getRandomColorMaterial())
             }
-            console.log(`adding maxX: ${segmentsArr[0].maxX}, minX: ${segmentsArr[0].minX}, number: ${segmentsArr[0].number}`)
+            // console.log(`adding maxX: ${segmentsArr[0].maxX}, minX: ${segmentsArr[0].minX}, number: ${segmentsArr[0].number}`)
             segmentsArr[0].segment.name = `segment${segmentsArr[0].number}`
             scene.add(segmentsArr[0].segment)
         }
