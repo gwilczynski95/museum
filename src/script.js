@@ -44,6 +44,7 @@ const player = {height: 1.8, speed: 150., turnSpeed:Math.PI*0.02, mass: 10};
 let prevTime = performance.now();
 const acceleration = new THREE.Vector3();
 const velocity = new THREE.Vector3();
+const true_velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 const frictionCoeff = 10.;
 
@@ -96,8 +97,11 @@ const zVertices = [];
 zVertices.push( new THREE.Vector3(0, 0, -.50) );
 zVertices.push( new THREE.Vector3(0, 0, 50) );
 const zAxisLineGeometry = new THREE.BufferGeometry().setFromPoints(zVertices);
+var playerCircleGeometry = new THREE.CircleBufferGeometry(.5, 10);
 
 // Materials
+
+var wireMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe:true } );
 
 const donutMaterial = new THREE.MeshStandardMaterial()
 donutMaterial.metalness = 0.7
@@ -139,6 +143,7 @@ const zLine = new THREE.Line(zAxisLineGeometry, zAxisLineMaterial);
 const plane = new THREE.Mesh(planeGeometry, planeMaterial);
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 const curve = new THREE.Mesh(curveGeometry, curveMaterial);
+const playerCircle = new THREE.Mesh(playerCircleGeometry, wireMaterial);
 scene.add(donut);
 scene.add(xLine);
 scene.add(yLine);
@@ -146,6 +151,7 @@ scene.add(zLine);
 scene.add(plane);
 scene.add(cube);
 scene.add(curve);
+scene.add(playerCircle);
 
 // Set wanted position of objects
 donut.rotation.set(Math.PI / 2, 0, 0);
@@ -157,6 +163,8 @@ plane.position.set(0, 0, 0);
 cube.position.set(0, 0.3, -1.5);
 
 curve.position.set(1, .2, 1);
+
+playerCircle.rotation.set(Math.PI/2, 0, 0);
 
 
 // Shadows
@@ -284,7 +292,8 @@ document.addEventListener( 'keyup', onKeyUp );
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, .1, 1000);
 camera.position.x = 0;
 camera.position.y = player.height;
-camera.position.z = -5;
+camera.position.z = 1;
+camera.rotation.order = "YXZ";
 scene.add(camera)
 camera.lookAt(new THREE.Vector3(0, player.height, 0));
 // let degree = 10;
@@ -324,7 +333,8 @@ scene.add( controls.getObject() );
 
 
 
-
+// place my player cube at camera
+playerCircle.position.set(camera.position.x, camera.position.y / 2, camera.position.z);
 
 
 
@@ -407,6 +417,8 @@ const renderer = new THREE.WebGLRenderer({
     alpha: true
 })
 
+
+
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -433,9 +445,89 @@ const tick = () =>
         if ( moveForward || moveBackward ) velocity.z -= direction.z * player.speed * delta;
         if ( moveLeft || moveRight ) velocity.x -= direction.x * player.speed * delta;
 
-        controls.moveRight( - velocity.x * delta );
-        controls.moveForward( - velocity.z * delta );
+        const position = playerCircle.geometry.attributes.position;
+        const vector = new THREE.Vector3();
+        var collision = false;
+        var collisionObj = null;
 
+        for (var vertexIndex = 0; vertexIndex < position.count; vertexIndex++) {
+            vector.fromBufferAttribute( position, vertexIndex );
+            vector.applyMatrix4( playerCircle.matrixWorld );
+            var directionVector = vector.sub(playerCircle.position);
+
+            var ray = new THREE.Raycaster(playerCircle.position, directionVector.normalize());
+            var collisionResults = ray.intersectObjects([segmentsArr[segmentsBefore].segment]);
+            if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
+                collision = true;
+                collisionObj = collisionResults[0];
+                break;
+            }
+        }
+
+        velocity.x = Math.round(velocity.x * 10000) / 10000;
+        velocity.z = Math.round(velocity.z * 10000) / 10000;
+
+        var new_velocity_x = velocity.x;
+        var new_velocity_z = velocity.z;
+
+        if (collision) {
+            var mag = Math.sqrt(Math.pow(velocity.x, 2) + Math.pow(velocity.z, 2));
+            var degX = Math.round(Math.acos(velocity.x / mag) * 100) / 100;
+            var degZ = Math.acos(velocity.z / mag);
+            if (degX > Math.PI / 2) 
+                degZ = Math.PI * 2 - degZ;
+            var camRotY = camera.rotation.y;
+            if (camRotY < 0)
+                camRotY = Math.PI * 2 + camRotY;
+            
+            // console.log("camRotY: " + camRotY + " degZ: " + degZ);
+            // var mag = Math.sqrt(Math.pow(velocity.x, 2) + Math.pow(velocity.z, 2));
+            // var degX = Math.round(Math.acos(velocity.x / mag) * 100) / 100;
+            // var degZ = Math.acos(velocity.z / mag);
+            // if (degX > Math.PI / 2) 
+            //     degZ = Math.PI * 2 - degZ;
+            // var camRotY = camera.rotation.y;
+            // if (camRotY < 0)
+            //     camRotY = Math.PI * 2 + camRotY;
+            
+            
+            // check collision vector
+            var dx = collisionResults[0].point.x - camera.position.x;
+            var dz = collisionResults[0].point.z - camera.position.z;
+            var col_deg = Math.atan2(dx, dz);
+            if (col_deg < 0) 
+                col_deg = 2 * Math.PI + col_deg;
+            var v_deg = camRotY - degZ;
+            console.log("col_deg: " + Math.round(col_deg * 100) / 100 + " v_deg: " + Math.round(v_deg * 100) / 100 + " diff: " + Math.round((col_deg - v_deg) * 100) / 100);
+
+
+
+            var absVelocityZ = Math.cos(camRotY - degZ) * mag;
+            // velocity.x -=  Math.sin(camRotY) * absVelocityZ;
+            // velocity.z -= Math.cos(camRotY) * absVelocityZ;
+            new_velocity_x = velocity.x - Math.sin(camRotY + 1e-8) * absVelocityZ;
+            new_velocity_z = velocity.z - Math.cos(camRotY + 1e-8) * absVelocityZ;
+
+            // velocity.z = Math.round(velocity.z * 100) / 100;
+            // velocity.x = Math.round(velocity.x * 100) / 100;
+        }
+
+        // console.log("v_z: " + velocity.z + " new_v_z: " + new_velocity_z);
+        
+        controls.moveRight( - new_velocity_x * delta );
+        controls.moveForward( - new_velocity_z * delta );
+
+        if (collision) {
+            // push player outside the wall
+            if (camera.position.z < collisionObj.point.z)
+                camera.position.z -= 1e-2;
+            else if (camera.position.z > collisionObj.point.z)
+                camera.position.z += 1e-2;
+        }
+        
+        // update position of the cube
+        playerCircle.position.x = camera.position.x;
+        playerCircle.position.z = camera.position.z;
 
         // segments update
         if (camera.position.x < segmentsArr[segmentsBefore].minX) {
