@@ -417,8 +417,6 @@ const renderer = new THREE.WebGLRenderer({
     alpha: true
 })
 
-
-
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -448,7 +446,6 @@ const tick = () =>
         const position = playerCircle.geometry.attributes.position;
         const vector = new THREE.Vector3();
         var collision = false;
-        var collisionObj = null;
 
         for (var vertexIndex = 0; vertexIndex < position.count; vertexIndex++) {
             vector.fromBufferAttribute( position, vertexIndex );
@@ -459,7 +456,6 @@ const tick = () =>
             var collisionResults = ray.intersectObjects([segmentsArr[segmentsBefore].segment]);
             if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
                 collision = true;
-                collisionObj = collisionResults[0];
                 break;
             }
         }
@@ -478,19 +474,7 @@ const tick = () =>
                 degZ = Math.PI * 2 - degZ;
             var camRotY = camera.rotation.y;
             if (camRotY < 0)
-                camRotY = Math.PI * 2 + camRotY;
-            
-            // console.log("camRotY: " + camRotY + " degZ: " + degZ);
-            // var mag = Math.sqrt(Math.pow(velocity.x, 2) + Math.pow(velocity.z, 2));
-            // var degX = Math.round(Math.acos(velocity.x / mag) * 100) / 100;
-            // var degZ = Math.acos(velocity.z / mag);
-            // if (degX > Math.PI / 2) 
-            //     degZ = Math.PI * 2 - degZ;
-            // var camRotY = camera.rotation.y;
-            // if (camRotY < 0)
-            //     camRotY = Math.PI * 2 + camRotY;
-            
-            
+                camRotY = Math.PI * 2 + camRotY;      
             // check collision vector
             var dx = collisionResults[0].point.x - camera.position.x;
             var dz = collisionResults[0].point.z - camera.position.z;
@@ -503,25 +487,18 @@ const tick = () =>
 
 
             var absVelocityZ = Math.cos(camRotY - degZ) * mag;
-            // velocity.x -=  Math.sin(camRotY) * absVelocityZ;
-            // velocity.z -= Math.cos(camRotY) * absVelocityZ;
             new_velocity_x = velocity.x - Math.sin(camRotY + 1e-8) * absVelocityZ;
             new_velocity_z = velocity.z - Math.cos(camRotY + 1e-8) * absVelocityZ;
-
-            // velocity.z = Math.round(velocity.z * 100) / 100;
-            // velocity.x = Math.round(velocity.x * 100) / 100;
         }
-
-        // console.log("v_z: " + velocity.z + " new_v_z: " + new_velocity_z);
         
         controls.moveRight( - new_velocity_x * delta );
         controls.moveForward( - new_velocity_z * delta );
 
         if (collision) {
             // push player outside the wall
-            if (camera.position.z < collisionObj.point.z)
+            if (camera.position.z < collisionResults[0].point.z)
                 camera.position.z -= 1e-2;
-            else if (camera.position.z > collisionObj.point.z)
+            else if (camera.position.z > collisionResults[0].point.z)
                 camera.position.z += 1e-2;
         }
         
